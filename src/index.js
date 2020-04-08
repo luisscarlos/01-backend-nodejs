@@ -1,11 +1,38 @@
 const express = require('express');
-const { uuid } = require('uuidv4');
+const { uuid, isUuid } = require('uuidv4');
 
 const app = express();
 
 app.use(express.json());
 
 const projects = [];
+
+//Middleware
+function logRequests(request, response, next) {
+  const { method, url } = request;
+
+  const logLabel = `[${method.toUpperCase()}] ${url}`;
+
+  console.time(logLabel);
+
+  next(); // Próximo middleware (rota)
+
+  console.timeEnd(logLabel);
+}
+
+function validateProjectID(request, response, next) {
+  const { id } = request.params;
+
+  if(!isUuid(id)) { // Verificar se o ID é válido. 
+    return response.status(400).json({ error:'Invalid project ID.' });
+    // Se for inválido esse middleware interrompe a requisição e mostra a mensagem acima
+  }
+
+  return next(); // Se for válido e não cair no IF, vai para a próxima rota
+}
+
+app.use(logRequests);
+app.use('/projects/:id', validateProjectID);
 
 //List
 app.get('/projects', (request, response) => {
